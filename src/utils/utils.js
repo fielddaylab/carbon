@@ -248,3 +248,23 @@ var screenSpace = function(cam, canv, obj)
   obj.y = ((((-obj.wy-obj.wh/2)+cam.wy)+(cam.wh/2))/cam.wh)*canv.height;
 }
 
+function wdist(a,b)
+{
+  var x = b.wx-a.wx;
+  var y = b.wy-a.wy;
+  return Math.sqrt(x*x+y*y);
+}
+
+var GenIcon = function(w,h)
+{
+  var icon = document.createElement('canvas');
+  icon.width = w || 10;
+  icon.height = h || 10;
+  icon.context = icon.getContext('2d');
+  icon.context.fillStyle = "#000000";
+  icon.context.strokeStyle = "#000000";
+  icon.context.textAlign = "center";
+
+  return icon;
+}
+
