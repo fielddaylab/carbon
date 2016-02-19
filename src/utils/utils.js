@@ -60,6 +60,12 @@ function doSetPosOnEvent(evt)
   }
 }
 
+function clamp(min,max,v)
+{
+  if(v < min) v = min; if(v > max) v = max;
+  return v;
+}
+
 function feq(f1,f2,e)
 {
   return (f1 < f2+e && f1 > f2-e);
