@@ -3,6 +3,7 @@ var GamePlayScene = function(game, stage)
   var self = this;
 
   var dc;
+  var n_updates;
 
   var carbon_icon;
   var oxygen_icon;
@@ -27,6 +28,7 @@ var GamePlayScene = function(game, stage)
   self.ready = function()
   {
     dc = stage.drawCanv;
+    n_updates = 0;
 
     //icons
     carbon_icon = GenIcon();
@@ -72,14 +74,19 @@ var GamePlayScene = function(game, stage)
 
     goobers.push(new Goober());
     goobers[0].wx = 0;
-    plants.push(new Plant());
-    plants[0].wx = 1;
+    for(var i = 0; i < 190; i++)
+    {
+      plants.push(new Plant());
+      plants[i].wx = Math.random()*cam.wh-cam.wh/2;
+    }
 
     mview_trans = new MolecularViewTransitioner();
   };
 
   self.tick = function()
   {
+    n_updates++;
+
     for(var i = 0; i < goobers.length; i++)
       tickGoober(goobers[i]);
     for(var i = 0; i < plants.length; i++)
@@ -122,6 +129,8 @@ var GamePlayScene = function(game, stage)
     for(var i = 0; i < oxygens.length; i++)
       drawIcon(oxygens[i],oxygen_icon);
     dc.context.globalAlpha=1;
+
+    dc.context.fillRect(dc.width/2+Math.cos(n_updates/10)*10-5,dc.height/2+Math.sin(n_updates/10)*10-5,10,10);
   };
 
   self.cleanup = function()
