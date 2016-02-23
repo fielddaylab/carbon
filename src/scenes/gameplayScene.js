@@ -203,8 +203,8 @@ var GamePlayScene = function(game, stage)
   {
     var self = this;
 
-    self.oxygen = 1000;
-    self.carbon = 1000;
+    self.oxygen = 100;
+    self.carbon = 100;
     self.oxygen_rep = 0;
     self.carbon_rep = 0;
 
@@ -256,8 +256,8 @@ var GamePlayScene = function(game, stage)
   {
     var self = this;
 
-    self.oxygen = 5;
-    self.carbon = 10;
+    self.oxygen = 0;
+    self.carbon = 0;
     self.oxygen_rep = 0;
     self.carbon_rep = 0;
     self.starving = 0;
@@ -293,8 +293,8 @@ var GamePlayScene = function(game, stage)
   {
     var self = this;
 
-    self.oxygen = 5;
-    self.carbon = 10;
+    self.oxygen = 0;
+    self.carbon = 0;
     self.oxygen_rep = 0;
     self.carbon_rep = 0;
     self.starving = 0;
@@ -417,7 +417,7 @@ var GamePlayScene = function(game, stage)
 
       if(o.oxygen < goober_ideal_oxygen) o.suffocating++;
       if(o.carbon < goober_ideal_carbon) o.starving++;
-      if(o.starving > 100 || o.suffocating > 100) //dead
+      if(o.starving > 10 || o.suffocating > 10) //dead
       {
         killGoober(o);
         return;
@@ -446,8 +446,7 @@ var GamePlayScene = function(game, stage)
           var p_carbon = plants[closest_pi].carbon;
           killPlant(plants[closest_pi]); //give to earth
           //take carbon back from earth
-          earth.carbon -= p_carbon;
-          o.carbon += p_carbon;
+          transfer(earth,o,0,p_carbon);
           o.starving -= Math.floor((o.carbon/goober_ideal_carbon)*o.starving);
         }
         else //move toward it
@@ -481,7 +480,7 @@ var GamePlayScene = function(game, stage)
 
       if(o.oxygen < plant_ideal_oxygen) o.suffocating++;
       if(o.carbon < plant_ideal_carbon) o.starving++;
-      if(o.starving > 100 || o.suffocating > 100) //dead
+      if(o.starving > 10 || o.suffocating > 10) //dead
       {
         killPlant(o);
         return;
@@ -596,9 +595,9 @@ var GamePlayScene = function(game, stage)
     }
 
     //earth expell
+    //give oxygen
     for(var i = 0; (earth.oxygen_rep > earth.oxygen) && i < oxygens.length; i++)
     {
-      //give oxygen
       o = oxygens[i];
       //give to goobers
       for(var j = 0; (o.target == earth) && j < goobers.length; j++)
@@ -622,8 +621,11 @@ var GamePlayScene = function(game, stage)
           p.oxygen_rep++;
         }
       }
+    }
 
-      //give carbon
+    //give carbon
+    for(var i = 0; (earth.carbon_rep > earth.carbon) && i < carbons.length; i++)
+    {
       c = carbons[i];
       //give to goobers
       for(var j = 0; (c.target == earth) && j < goobers.length; j++)
