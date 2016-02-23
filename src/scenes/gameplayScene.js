@@ -5,6 +5,13 @@ var GamePlayScene = function(game, stage)
   var dc;
   var n_updates;
 
+  var clicker;
+
+  var goober_ideal_oxygen = 5;
+  var plant_ideal_oxygen = 5;
+  var plant_birth_carbon_cost = 1;
+  var goober_birth_carbon_cost = 5;
+
   var carbon_icon;
   var oxygen_icon;
   var goober_icon;
@@ -29,6 +36,8 @@ var GamePlayScene = function(game, stage)
   {
     dc = stage.drawCanv;
     n_updates = 0;
+
+    clicker = new Clicker({source:stage.dispCanv.canvas});
 
     //icons
     carbon_icon = GenIcon();
@@ -72,12 +81,16 @@ var GamePlayScene = function(game, stage)
     goobers = [];
     plants = [];
 
-    goobers.push(new Goober());
-    goobers[0].wx = 0;
-    for(var i = 0; i < 190; i++)
+    var g = new Goober();
+    g.wx = 0;
+    clicker.register(g);
+    goobers.push(g);
+    for(var i = 0; i < 2; i++)
     {
-      plants.push(new Plant());
-      plants[i].wx = Math.random()*cam.wh-cam.wh/2;
+      var p = new Plant();
+      p.wx = Math.random()*cam.wh-cam.wh/2;
+      clicker.register(p);
+      plants.push(p);
     }
 
     mview_trans = new MolecularViewTransitioner();
@@ -86,6 +99,8 @@ var GamePlayScene = function(game, stage)
   self.tick = function()
   {
     n_updates++;
+
+    clicker.flush();
 
     for(var i = 0; i < goobers.length; i++)
       tickGoober(goobers[i]);
@@ -151,8 +166,8 @@ var GamePlayScene = function(game, stage)
   {
     var self = this;
 
-    self.carbon = 100;
-    self.oxygen = 100;
+    self.carbon = 1000;
+    self.oxygen = 1000;
 
     self.x;
     self.y;
@@ -213,7 +228,20 @@ var GamePlayScene = function(game, stage)
     self.wx = 0;
     self.ww = 0.5;
     self.wh = 0.5;
-    self.wy = 0+self.wh/2;
+    self.wy = 0+self.wh/2+Math.random();
+
+    self.click = function(evt)
+    {
+      if(self.carbon > goober_birth_carbon_cost)
+      {
+        var g = new Goober();
+        g.carbon = goober_birth_carbon_cost;
+        g.oxygen = 0;
+        g.wx = self.wx;
+        clicker.register(g);
+        goobers.push(g);
+      }
+    }
   }
 
   var Plant = function()
@@ -234,7 +262,20 @@ var GamePlayScene = function(game, stage)
     self.wx = 0;
     self.ww = 0.5;
     self.wh = 0.5;
-    self.wy = 0+self.wh/2;
+    self.wy = 0+self.wh/2+Math.random();
+
+    self.click = function(evt)
+    {
+      if(self.carbon > plant_birth_carbon_cost)
+      {
+        var p = new Plant();
+        p.carbon = plant_birth_carbon_cost;
+        p.oxygen = 0;
+        p.wx = Math.random()*cam.wh-cam.wh/2;
+        clicker.register(p);
+        plants.push(p);
+      }
+    }
   }
 
   var MolecularViewTransitioner = function()
@@ -294,26 +335,37 @@ var GamePlayScene = function(game, stage)
 
   }
 
+  var transfer = function(from,to,oxygen,carbon)
+  {
+    to.oxygen += oxygen; from.oxygen -= oxygen;
+    if(from.oxygen < 0) { to.oxygen += from.oxygen; from.oxygen = 0; }
+    to.carbon += carbon; from.carbon -= carbon;
+    if(from.carbon < 0) { to.carbon += from.carbon; from.carbon = 0; }
+  }
+
   var ot;
   var ct;
   var tickGoober = function(o)
   {
     o.t++;
-    //console.log(o.oxygen+","+o.carbon);
     if(o.t % 100 == 0)
     {
       //1x o2
       ot = 2;
-      o.oxygen += ot; earth.oxygen -= ot;
-      if(earth.carbon < 0) { o.carbon += earth.carbon; earth.carbon = 0; }
-      if(earth.oxygen < 0) { o.oxygen += earth.oxygen; earth.oxygen = 0; }
+      ct = 0;
+      transfer(earth,o,ot,ct);
       //1x co2
       ot = 2;
       ct = 1;
-      o.carbon -= ct; earth.carbon += ct;
-      o.oxygen -= ot; earth.oxygen += ot;
-      if(o.carbon < 0) { earth.carbon += o.carbon; o.carbon = 0; }
-      if(o.oxygen < 0) { earth.oxygen += o.oxygen; o.oxygen = 0; }
+      transfer(o,earth,ot,ct);
+
+      //breathe heavy
+      if(o.oxygen < goober_ideal_oxygen)
+      {
+        ot = 2;
+        ct = 0;
+        transfer(earth,o,ot,ct);
+      }
     }
 
     if(o.carbon < 5) //seek out food
@@ -333,16 +385,17 @@ var GamePlayScene = function(game, stage)
 
       if(closest_pi != -1) //found food
       {
-        if(d <= 0.1) //eat it
+        if(closest_d <= 0.1) //eat it
         {
           o.carbon += plants[closest_pi].carbon;
           o.oxygen += plants[closest_pi].oxygen;
+          clicker.unregister(plants[closest_pi]);
           plants.splice(closest_pi,1);
           o.starving = 0;
         }
         else //move toward it
         {
-          o.wx += (plants[closest_pi].wx-o.wx)/d/10;
+          o.wx += (plants[closest_pi].wx-o.wx)/closest_d/10;
         }
       }
     }
@@ -354,7 +407,13 @@ var GamePlayScene = function(game, stage)
         earth.carbon += o.carbon;
         earth.oxygen += o.oxygen;
         for(var i = 0; i < goobers.length; i++)
-          if(goobers[i] == o) goobers.splice(i,1);
+        {
+          if(goobers[i] == o)
+          {
+            clicker.unregister(goobers[i]);
+            goobers.splice(i,1);
+          }
+        }
       }
     }
   }
@@ -366,15 +425,19 @@ var GamePlayScene = function(game, stage)
       //1x co2
       ot = 2;
       ct = 1;
-      o.oxygen += ot; earth.oxygen -= ot;
-      o.carbon += ct; earth.carbon -= ct;
-      if(earth.carbon < 0) { o.carbon += earth.carbon; earth.carbon = 0; }
-      if(earth.oxygen < 0) { o.oxygen += earth.oxygen; earth.oxygen = 0; }
+      transfer(earth,o,ot,ct);
       //1x o2
       ot = 2;
-      o.oxygen -= ot; earth.oxygen += ot;
-      if(o.carbon < 0) { earth.carbon += o.carbon; o.carbon = 0; }
-      if(o.oxygen < 0) { earth.oxygen += o.oxygen; o.oxygen = 0; }
+      ct = 0;
+      transfer(o,earth,ot,ct);
+
+      //breathe heavy
+      if(o.oxygen < plant_ideal_oxygen)
+      {
+        ot = 2;
+        ct = 0;
+        transfer(earth,o,ot,ct);
+      }
     }
 
     if(o.carbon == 0) //starving
@@ -382,11 +445,16 @@ var GamePlayScene = function(game, stage)
       o.starving++;
       if(o.starving > 100) //dead
       {
-        console.log('dead m8');
         earth.carbon += o.carbon;
         earth.oxygen += o.oxygen;
         for(var i = 0; i < plants.length; i++)
-          if(plants[i] == o) plants.splice(i,1);
+        {
+          if(plants[i] == o)
+          {
+            clicker.unregister(plants[i]);
+            plants.splice(i,1);
+          }
+        }
       }
     }
   }
