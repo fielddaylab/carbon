@@ -7,22 +7,26 @@ var GamePlayScene = function(game, stage)
 
   var clicker;
 
-  var goober_ideal_oxygen = 5;
+  var plant_start_oxygen = 5;
+  var plant_start_carbon = 5;
   var plant_ideal_oxygen = 5;
-  var goober_ideal_carbon = 5;
   var plant_ideal_carbon = 5;
   var plant_birth_carbon_cost = 1;
+  var goober_start_oxygen = 5;
+  var goober_start_carbon = 5;
+  var goober_ideal_oxygen = 5;
+  var goober_ideal_carbon = 5;
   var goober_birth_carbon_cost = 5;
 
-  var carbon_icon;
   var oxygen_icon;
+  var carbon_icon;
   var goober_icon;
   var plant_icon;
 
   var cam;
   var earth;
-  var carbons;
   var oxygens;
+  var carbons;
   var goobers;
   var plants;
 
@@ -42,17 +46,17 @@ var GamePlayScene = function(game, stage)
     clicker = new Clicker({source:stage.dispCanv.canvas});
 
     //icons
-    carbon_icon = GenIcon();
-    carbon_icon.context.fillStyle = "#FFFF00";
-    carbon_icon.context.beginPath();
-    carbon_icon.context.arc(carbon_icon.width/2,carbon_icon.height/2,carbon_icon.width/2,0,2*Math.PI);
-    carbon_icon.context.fill();
-
     oxygen_icon = GenIcon();
     oxygen_icon.context.fillStyle = "#0000FF";
     oxygen_icon.context.beginPath();
     oxygen_icon.context.arc(oxygen_icon.width/2,oxygen_icon.height/2,oxygen_icon.width/2,0,2*Math.PI);
     oxygen_icon.context.fill();
+
+    carbon_icon = GenIcon();
+    carbon_icon.context.fillStyle = "#FFFF00";
+    carbon_icon.context.beginPath();
+    carbon_icon.context.arc(carbon_icon.width/2,carbon_icon.height/2,carbon_icon.width/2,0,2*Math.PI);
+    carbon_icon.context.fill();
 
     goober_icon = GenIcon();
     goober_icon.context.fillStyle = "#FF0000";
@@ -78,33 +82,34 @@ var GamePlayScene = function(game, stage)
     earth.ww = cam.ww;
     earth.wh = cam.wh;
 
-    carbons = [];
-    for(var i = 0; i < earth.carbon; i++)
-    {
-      var c = new Carbon();
-      c.host = earth;
-      c.wx = Math.random()*cam.ww-cam.ww/2;
-      c.wy = Math.random()*cam.wh-cam.wh/2;
-      carbons.push(c);
-    }
-
     oxygens = [];
     for(var i = 0; i < earth.oxygen; i++)
     {
       var o = new Oxygen();
-      o.host = earth;
+      o.target = earth;
       o.wx = Math.random()*cam.ww-cam.ww/2;
       o.wy = Math.random()*cam.wh-cam.wh/2;
       oxygens.push(o);
     }
+    earth.oxygen_rep = oxygens.length;
+
+    carbons = [];
+    for(var i = 0; i < earth.carbon; i++)
+    {
+      var c = new Carbon();
+      c.target = earth;
+      c.wx = Math.random()*cam.ww-cam.ww/2;
+      c.wy = Math.random()*cam.wh-cam.wh/2;
+      carbons.push(c);
+    }
+    earth.carbon_rep = carbons.length;
 
     goobers = [];
     for(var i = 0; i < 2; i++)
     {
       var g = new Goober();
       g.wx = 0;
-      earth.carbon -= g.carbon;
-      earth.oxygen -= g.oxygen;
+      transfer(earth,g,goober_start_oxygen,goober_start_carbon);
       clicker.register(g);
       goobers.push(g);
     }
@@ -114,8 +119,7 @@ var GamePlayScene = function(game, stage)
     {
       var p = new Plant();
       p.wx = Math.random()*cam.ww-cam.ww/2;
-      earth.carbon -= p.carbon;
-      earth.oxygen -= p.oxygen;
+      transfer(earth,p,plant_start_oxygen,plant_start_carbon);
       clicker.register(p);
       plants.push(p);
     }
@@ -134,11 +138,13 @@ var GamePlayScene = function(game, stage)
     for(var i = 0; i < plants.length; i++)
       tickPlant(plants[i]);
 
+    resolveReps();
+
     dc.context.globalAlpha=0.1;
-    for(var i = 0; i < carbons.length; i++)
-      tickCarbon(carbons[i]);
     for(var i = 0; i < oxygens.length; i++)
       tickOxygen(oxygens[i]);
+    for(var i = 0; i < carbons.length; i++)
+      tickCarbon(carbons[i]);
   };
 
   self.draw = function()
@@ -149,11 +155,10 @@ var GamePlayScene = function(game, stage)
       screenSpace(cam,dc,goobers[i]);
     for(var i = 0; i < plants.length; i++)
       screenSpace(cam,dc,plants[i]);
-    for(var i = 0; i < carbons.length; i++)
-      screenSpace(cam,dc,carbons[i]);
     for(var i = 0; i < oxygens.length; i++)
       screenSpace(cam,dc,oxygens[i]);
-
+    for(var i = 0; i < carbons.length; i++)
+      screenSpace(cam,dc,carbons[i]);
 
     dc.context.fillStyle = "#000000";
     //drawRect(earth);
@@ -171,10 +176,10 @@ var GamePlayScene = function(game, stage)
     }
 
     dc.context.globalAlpha=0.9;
-    for(var i = 0; i < carbons.length; i++)
-      drawIcon(carbons[i],carbon_icon);
     for(var i = 0; i < oxygens.length; i++)
       drawIcon(oxygens[i],oxygen_icon);
+    for(var i = 0; i < carbons.length; i++)
+      drawIcon(carbons[i],carbon_icon);
     dc.context.globalAlpha=1;
 
     dc.context.fillRect(dc.width/2+Math.cos(n_updates/10)*10-5,dc.height/2+Math.sin(n_updates/10)*10-5,10,10);
@@ -198,10 +203,10 @@ var GamePlayScene = function(game, stage)
   {
     var self = this;
 
-    self.carbon = 1000;
     self.oxygen = 1000;
-    self.carbon_rep = self.carbon;
-    self.oxygen_rep = self.oxygen;
+    self.carbon = 1000;
+    self.oxygen_rep = 0;
+    self.carbon_rep = 0;
 
     self.x;
     self.y;
@@ -214,22 +219,6 @@ var GamePlayScene = function(game, stage)
     self.wh = 0;
   }
 
-  var Carbon = function()
-  {
-    var self = this;
-
-    self.x;
-    self.y;
-    self.w;
-    self.h;
-
-    self.wx = 0;
-    self.wy = 0;
-    self.ww = 0.1;
-    self.wh = 0.1;
-
-    self.host;
-  }
   var Oxygen = function()
   {
     var self = this;
@@ -244,17 +233,33 @@ var GamePlayScene = function(game, stage)
     self.ww = 0.1;
     self.wh = 0.1;
 
-    self.host;
+    self.target;
+  }
+  var Carbon = function()
+  {
+    var self = this;
+
+    self.x;
+    self.y;
+    self.w;
+    self.h;
+
+    self.wx = 0;
+    self.wy = 0;
+    self.ww = 0.1;
+    self.wh = 0.1;
+
+    self.target;
   }
 
   var Goober = function()
   {
     var self = this;
 
-    self.carbon = 10;
     self.oxygen = 5;
-    self.carbon_rep = 0;
+    self.carbon = 10;
     self.oxygen_rep = 0;
+    self.carbon_rep = 0;
     self.starving = 0;
     self.suffocating = 0;
     self.t = 0;
@@ -275,8 +280,8 @@ var GamePlayScene = function(game, stage)
       {
         self.carbon -= goober_birth_carbon_cost;
         var g = new Goober();
-        g.carbon = goober_birth_carbon_cost;
         g.oxygen = 0;
+        g.carbon = goober_birth_carbon_cost;
         g.wx = self.wx;
         clicker.register(g);
         goobers.push(g);
@@ -288,10 +293,10 @@ var GamePlayScene = function(game, stage)
   {
     var self = this;
 
-    self.carbon = 10;
     self.oxygen = 5;
-    self.carbon_rep = 0;
+    self.carbon = 10;
     self.oxygen_rep = 0;
+    self.carbon_rep = 0;
     self.starving = 0;
     self.suffocating = 0;
     self.t = 0;
@@ -312,8 +317,8 @@ var GamePlayScene = function(game, stage)
       {
         self.carbon -= plant_birth_carbon_cost;
         var p = new Plant();
-        p.carbon = plant_birth_carbon_cost;
         p.oxygen = 0;
+        p.carbon = plant_birth_carbon_cost;
         p.wx = Math.random()*cam.ww-cam.ww/2;
         clicker.register(p);
         plants.push(p);
@@ -410,20 +415,11 @@ var GamePlayScene = function(game, stage)
         transfer(earth,o,ot,ct);
       }
 
-      if(o.carbon < goober_ideal_carbon) o.starving++;
       if(o.oxygen < goober_ideal_oxygen) o.suffocating++;
+      if(o.carbon < goober_ideal_carbon) o.starving++;
       if(o.starving > 100 || o.suffocating > 100) //dead
       {
-        earth.carbon += o.carbon;
-        earth.oxygen += o.oxygen;
-        for(var i = 0; i < goobers.length; i++)
-        {
-          if(goobers[i] == o)
-          {
-            clicker.unregister(goobers[i]);
-            goobers.splice(i,1);
-          }
-        }
+        killGoober(o);
         return;
       }
     }
@@ -447,10 +443,11 @@ var GamePlayScene = function(game, stage)
       {
         if(closest_d <= 0.1) //eat it
         {
-          o.carbon += plants[closest_pi].carbon;
-          earth.oxygen += plants[closest_pi].oxygen; //return oxygen to the earth, i guess?
-          clicker.unregister(plants[closest_pi]);
-          plants.splice(closest_pi,1);
+          var p_carbon = plants[closest_pi].carbon;
+          killPlant(plants[closest_pi]); //give to earth
+          //take carbon back from earth
+          earth.carbon -= p_carbon;
+          o.carbon += p_carbon;
           o.starving -= Math.floor((o.carbon/goober_ideal_carbon)*o.starving);
         }
         else //move toward it
@@ -482,73 +479,13 @@ var GamePlayScene = function(game, stage)
         transfer(earth,o,ot,ct);
       }
 
-      if(o.carbon < plant_ideal_carbon) o.starving++;
       if(o.oxygen < plant_ideal_oxygen) o.suffocating++;
+      if(o.carbon < plant_ideal_carbon) o.starving++;
       if(o.starving > 100 || o.suffocating > 100) //dead
       {
-        earth.carbon += o.carbon;
-        earth.oxygen += o.oxygen;
-        for(var i = 0; i < plants.length; i++)
-        {
-          if(plants[i] == o)
-          {
-            clicker.unregister(plants[i]);
-            plants.splice(i,1);
-          }
-        }
+        killPlant(o);
         return;
       }
-    }
-  }
-
-  var tickCarbon = function(o)
-  {
-    o.wx += (Math.random()-0.5)*0.1;
-    o.wy += (Math.random()-0.5)*0.1;
-
-    var transfer = undefined;
-    if(o.host.carbon_rep > o.host.carbon) //I'm not welcome
-    {
-      if(o.host == earth) //in earth- seek out new host
-      {
-        for(var i = 0; !transfer && i < goobers.length; i++) //check for goobers in need
-        {
-          if(goobers[i].carbon_rep < goobers[i].carbon)
-            transfer = goobers[i];
-        }
-        for(var i = 0; !transfer && i < plants.length; i++) //check for plants in need
-        {
-          if(plants[i].carbon_rep < plants[i].carbon)
-            transfer = plants[i];
-        }
-        if(transfer) //found something in need- move towards and transfer!
-        {
-          o.wx = lerp(o.wx,transfer.wx,0.1);
-          o.wy = lerp(o.wy,transfer.wy,0.1);
-          if(worldPtWithinObj(o.wx,o.wy,transfer))
-          {
-            o.host.carbon_rep--;
-            o.host = transfer;
-            o.host.carbon_rep++;
-          }
-        }
-      }
-      else //not welcome, not in earth- just wiggle til I naturally exit
-      {
-        if(worldPtWithinObj(o.wx,o.wy,o.host))
-        {
-          o.host.carbon_rep--;
-          o.host = earth;
-          o.host.carbon_rep++;
-        }
-      }
-    }
-    else //still welcome- stay inside bounds of host
-    {
-      if(o.wx < o.host.wx-(o.host.ww/2)) o.wx = o.host.wx-(o.host.ww/2);
-      if(o.wx > o.host.wx+(o.host.ww/2)) o.wx = o.host.wx+(o.host.ww/2);
-      if(o.wy < o.host.wy-(o.host.wh/2)) o.wy = o.host.wy-(o.host.wh/2);
-      if(o.wy > o.host.wy+(o.host.wh/2)) o.wy = o.host.wy+(o.host.wh/2);
     }
   }
 
@@ -557,49 +494,224 @@ var GamePlayScene = function(game, stage)
     o.wx += (Math.random()-0.5)*0.1;
     o.wy += (Math.random()-0.5)*0.1;
 
-    var transfer = undefined;
-    if(o.host.oxygen_rep > o.host.oxygen) //I'm not welcome
+    if(!worldPtWithinObj(o.wx,o.wy,o.target))
     {
-      if(o.host == earth) //in earth- seek out new host
+      o.wx = lerp(o.wx,o.target.wx,0.1);
+      o.wy = lerp(o.wy,o.target.wy,0.1);
+    }
+    else
+    {
+      if(o.wx < o.target.wx-(o.target.ww/2)) o.wx = o.target.wx-(o.target.ww/2);
+      if(o.wx > o.target.wx+(o.target.ww/2)) o.wx = o.target.wx+(o.target.ww/2);
+      if(o.wy < o.target.wy-(o.target.wh/2)) o.wy = o.target.wy-(o.target.wh/2);
+      if(o.wy > o.target.wy+(o.target.wh/2)) o.wy = o.target.wy+(o.target.wh/2);
+    }
+  }
+
+  var tickCarbon = function(o)
+  {
+    o.wx += (Math.random()-0.5)*0.1;
+    o.wy += (Math.random()-0.5)*0.1;
+
+    if(!worldPtWithinObj(o.wx,o.wy,o.target))
+    {
+      o.wx = lerp(o.wx,o.target.wx,0.1);
+      o.wy = lerp(o.wy,o.target.wy,0.1);
+    }
+    else
+    {
+      if(o.wx < o.target.wx-(o.target.ww/2)) o.wx = o.target.wx-(o.target.ww/2);
+      if(o.wx > o.target.wx+(o.target.ww/2)) o.wx = o.target.wx+(o.target.ww/2);
+      if(o.wy < o.target.wy-(o.target.wh/2)) o.wy = o.target.wy-(o.target.wh/2);
+      if(o.wy > o.target.wy+(o.target.wh/2)) o.wy = o.target.wy+(o.target.wh/2);
+    }
+  }
+
+
+  var resolveReps = function()
+  {
+    var g;
+    var p;
+    var o;
+    var c;
+
+    //goobers expell
+    for(var i = 0; i < goobers.length; i++)
+    {
+      g = goobers[i];
+
+      //expell oxygen
+      for(var j = 0; (g.oxygen_rep > g.oxygen) && j < oxygens.length; j++)
       {
-        for(var i = 0; !transfer && i < goobers.length; i++) //check for goobers in need
+        o = oxygens[j];
+        if(o.target == g)
         {
-          if(goobers[i].oxygen_rep < goobers[i].oxygen)
-            transfer = goobers[i];
-        }
-        for(var i = 0; !transfer && i < plants.length; i++) //check for plants in need
-        {
-          if(plants[i].oxygen_rep < plants[i].oxygen)
-            transfer = plants[i];
-        }
-        if(transfer) //found something in need- move towards and transfer!
-        {
-          o.wx = lerp(o.wx,transfer.wx,0.1);
-          o.wy = lerp(o.wy,transfer.wy,0.1);
-          if(worldPtWithinObj(o.wx,o.wy,transfer))
-          {
-            o.host.oxygen_rep--;
-            o.host = transfer;
-            o.host.oxygen_rep++;
-          }
+          o.target = earth;
+          earth.oxygen_rep++;
+          g.oxygen_rep--;
         }
       }
-      else //not welcome, not in earth- just wiggle til I naturally exit
+
+      //expell carbon
+      for(var j = 0; (g.carbon_rep > g.carbon) && j < carbons.length; j++)
       {
-        if(worldPtWithinObj(o.wx,o.wy,o.host))
+        c = carbons[j];
+        if(c.target == g)
         {
-          o.host.oxygen_rep--;
-          o.host = earth;
-          o.host.oxygen_rep++;
+          c.target = earth;
+          earth.carbon_rep++;
+          g.carbon_rep--;
         }
       }
     }
-    else //still welcome- stay inside bounds of host
+
+    //plants expell
+    for(var i = 0; i < plants.length; i++)
     {
-      if(o.wx < o.host.wx-(o.host.ww/2)) o.wx = o.host.wx-(o.host.ww/2);
-      if(o.wx > o.host.wx+(o.host.ww/2)) o.wx = o.host.wx+(o.host.ww/2);
-      if(o.wy < o.host.wy-(o.host.wh/2)) o.wy = o.host.wy-(o.host.wh/2);
-      if(o.wy > o.host.wy+(o.host.wh/2)) o.wy = o.host.wy+(o.host.wh/2);
+      p = plants[i];
+
+      //expell oxygen
+      for(var j = 0; (p.oxygen_rep > p.oxygen) && j < oxygens.length; j++)
+      {
+        o = oxygens[j];
+        if(o.target == p)
+        {
+          o.target = earth;
+          earth.oxygen_rep++;
+          p.oxygen_rep--;
+        }
+      }
+
+      //expell carbon
+      for(var j = 0; (p.carbon_rep > p.carbon) && j < carbons.length; j++)
+      {
+        c = carbons[j];
+        if(c.target == p)
+        {
+          c.target = earth;
+          earth.carbon_rep++;
+          p.carbon_rep--;
+        }
+      }
+    }
+
+    //earth expell
+    for(var i = 0; (earth.oxygen_rep > earth.oxygen) && i < oxygens.length; i++)
+    {
+      //give oxygen
+      o = oxygens[i];
+      //give to goobers
+      for(var j = 0; (o.target == earth) && j < goobers.length; j++)
+      {
+        g = goobers[j];
+        if(g.oxygen_rep < g.oxygen)
+        {
+          o.target = g;
+          earth.oxygen_rep--;
+          g.oxygen_rep++;
+        }
+      }
+      //give to plants
+      for(var j = 0; (o.target == earth) && j < plants.length; j++)
+      {
+        p = plants[j];
+        if(p.oxygen_rep < p.oxygen)
+        {
+          o.target = p;
+          earth.oxygen_rep--;
+          p.oxygen_rep++;
+        }
+      }
+
+      //give carbon
+      c = carbons[i];
+      //give to goobers
+      for(var j = 0; (c.target == earth) && j < goobers.length; j++)
+      {
+        g = goobers[j];
+        if(g.carbon_rep < g.carbon)
+        {
+          c.target = g;
+          earth.carbon_rep--;
+          g.carbon_rep++;
+        }
+      }
+      //give to plants
+      for(var j = 0; (c.target == earth) && j < plants.length; j++)
+      {
+        p = plants[j];
+        if(p.carbon_rep < p.carbon)
+        {
+          c.target = p;
+          earth.carbon_rep--;
+          p.carbon_rep++;
+        }
+      }
+    }
+
+  }
+
+  var killGoober = function(o)
+  {
+    earth.oxygen += o.oxygen;
+    earth.carbon += o.carbon;
+
+    for(var i = 0; i < oxygens.length; i++)
+    {
+      if(oxygens[i].target == o)
+      {
+        oxygens[i].target = earth;
+        earth.oxygen_rep++;
+        o.oxygen_rep--;
+      }
+    }
+    for(var i = 0; i < carbons.length; i++)
+    {
+      if(carbons[i].target == o)
+      {
+        carbons[i].target = earth;
+        earth.carbon_rep++;
+        o.carbon_rep--;
+      }
+    }
+
+    clicker.unregister(o);
+    for(var i = 0; i < goobers.length; i++)
+    {
+      if(goobers[i] == o)
+        goobers.splice(i,1);
+    }
+  }
+
+  var killPlant = function(o)
+  {
+    earth.oxygen += o.oxygen;
+    earth.carbon += o.carbon;
+
+    for(var i = 0; i < oxygens.length; i++)
+    {
+      if(oxygens[i].target == o)
+      {
+        oxygens[i].target = earth;
+        earth.oxygen_rep++;
+        o.oxygen_rep--;
+      }
+    }
+    for(var i = 0; i < carbons.length; i++)
+    {
+      if(carbons[i].target == o)
+      {
+        carbons[i].target = earth;
+        earth.carbon_rep++;
+        o.carbon_rep--;
+      }
+    }
+
+    clicker.unregister(o);
+    for(var i = 0; i < plants.length; i++)
+    {
+      if(plants[i] == o)
+        plants.splice(i,1);
     }
   }
 
@@ -607,10 +719,10 @@ var GamePlayScene = function(game, stage)
   {
     if(x == undefined) x = o.x;
     if(y == undefined) y = o.y;
-    dc.context.fillStyle = "#FFFF00";
-    dc.context.fillRect(x,y,2,(o.carbon/100)*20);
     dc.context.fillStyle = "#0000FF";
-    dc.context.fillRect(x+2,y,2,(o.oxygen/100)*20);
+    dc.context.fillRect(x,y,2,(o.oxygen/100)*20);
+    dc.context.fillStyle = "#FFFF00";
+    dc.context.fillRect(x+2,y,2,(o.carbon/100)*20);
   }
 
   var drawIcon = function(o,icon)
