@@ -141,6 +141,14 @@ var ptNear = function(ptx, pty, x, y, r)
   var d2 = r*r;
   return w2+h2 < d2;
 }
+var worldPtWithin = function(ptx, pty, wx, wy, ww, wh)
+{
+  return (ptx >= wx-(ww/2) && ptx <= wx+(ww/2) && pty >= wy-(wh/2) && pty <= wy+(wh/2));
+}
+var worldPtWithinObj = function(ptx, pty, obj)
+{
+  return worldPtWithin(ptx, pty, obj.wx, obj.wy, obj.ww, obj.wh);
+}
 
 var decToHex = function(dec, dig)
 {
