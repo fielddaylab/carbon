@@ -90,7 +90,7 @@ var GamePlayScene = function(game, stage)
     for(var i = 0; i < 2; i++)
     {
       var p = new Plant();
-      p.wx = Math.random()*cam.wh-cam.wh/2;
+      p.wx = Math.random()*cam.ww-cam.ww/2;
       clicker.register(p);
       plants.push(p);
     }
@@ -273,7 +273,7 @@ var GamePlayScene = function(game, stage)
         var p = new Plant();
         p.carbon = plant_birth_carbon_cost;
         p.oxygen = 0;
-        p.wx = Math.random()*cam.wh-cam.wh/2;
+        p.wx = Math.random()*cam.ww-cam.ww/2;
         clicker.register(p);
         plants.push(p);
       }
@@ -407,7 +407,7 @@ var GamePlayScene = function(game, stage)
         if(closest_d <= 0.1) //eat it
         {
           o.carbon += plants[closest_pi].carbon;
-          o.oxygen += plants[closest_pi].oxygen;
+          earth.oxygen += plants[closest_pi].oxygen; //return oxygen to the earth, i guess?
           clicker.unregister(plants[closest_pi]);
           plants.splice(closest_pi,1);
           o.starving = 0;
