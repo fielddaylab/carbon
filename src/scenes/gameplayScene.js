@@ -201,7 +201,8 @@ var GamePlayScene = function(game, stage)
 
     self.carbon = 10;
     self.oxygen = 5;
-    self.hungry = 0;
+    self.starving = 0;
+    self.suffocating = 0;
     self.t = 0;
 
     self.x = 0;
@@ -221,6 +222,8 @@ var GamePlayScene = function(game, stage)
 
     self.carbon = 10;
     self.oxygen = 5;
+    self.starving = 0;
+    self.suffocating = 0;
     self.t = 0;
 
     self.x = 0;
@@ -302,13 +305,13 @@ var GamePlayScene = function(game, stage)
       //1x o2
       ot = 2;
       o.oxygen += ot; earth.oxygen -= ot;
-
+      if(earth.carbon < 0) { o.carbon += earth.carbon; earth.carbon = 0; }
+      if(earth.oxygen < 0) { o.oxygen += earth.oxygen; earth.oxygen = 0; }
       //1x co2
       ot = 2;
       ct = 1;
       o.carbon -= ct; earth.carbon += ct;
       o.oxygen -= ot; earth.oxygen += ot;
-
       if(o.carbon < 0) { earth.carbon += o.carbon; o.carbon = 0; }
       if(o.oxygen < 0) { earth.oxygen += o.oxygen; o.oxygen = 0; }
     }
@@ -335,7 +338,7 @@ var GamePlayScene = function(game, stage)
           o.carbon += plants[closest_pi].carbon;
           o.oxygen += plants[closest_pi].oxygen;
           plants.splice(closest_pi,1);
-          o.hungry = 0;
+          o.starving = 0;
         }
         else //move toward it
         {
@@ -345,8 +348,8 @@ var GamePlayScene = function(game, stage)
     }
     if(o.carbon == 0) //starving
     {
-      o.hungry++;
-      if(o.hungry > 100) //dead
+      o.starving++;
+      if(o.starving > 100) //dead
       {
         earth.carbon += o.carbon;
         earth.oxygen += o.oxygen;
@@ -365,13 +368,26 @@ var GamePlayScene = function(game, stage)
       ct = 1;
       o.oxygen += ot; earth.oxygen -= ot;
       o.carbon += ct; earth.carbon -= ct;
-
+      if(earth.carbon < 0) { o.carbon += earth.carbon; earth.carbon = 0; }
+      if(earth.oxygen < 0) { o.oxygen += earth.oxygen; earth.oxygen = 0; }
       //1x o2
       ot = 2;
       o.oxygen -= ot; earth.oxygen += ot;
-
       if(o.carbon < 0) { earth.carbon += o.carbon; o.carbon = 0; }
       if(o.oxygen < 0) { earth.oxygen += o.oxygen; o.oxygen = 0; }
+    }
+
+    if(o.carbon == 0) //starving
+    {
+      o.starving++;
+      if(o.starving > 100) //dead
+      {
+        console.log('dead m8');
+        earth.carbon += o.carbon;
+        earth.oxygen += o.oxygen;
+        for(var i = 0; i < plants.length; i++)
+          if(plants[i] == o) plants.splice(i,1);
+      }
     }
   }
 
