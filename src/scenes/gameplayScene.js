@@ -9,6 +9,8 @@ var GamePlayScene = function(game, stage)
 
   var goober_ideal_oxygen = 5;
   var plant_ideal_oxygen = 5;
+  var goober_ideal_carbon = 5;
+  var plant_ideal_carbon = 5;
   var plant_birth_carbon_cost = 1;
   var goober_birth_carbon_cost = 5;
 
@@ -366,9 +368,26 @@ var GamePlayScene = function(game, stage)
         ct = 0;
         transfer(earth,o,ot,ct);
       }
+
+      if(o.carbon < goober_ideal_carbon) o.starving++;
+      if(o.oxygen < goober_ideal_oxygen) o.suffocating++;
+      if(o.starving > 100 || o.suffocating > 100) //dead
+      {
+        earth.carbon += o.carbon;
+        earth.oxygen += o.oxygen;
+        for(var i = 0; i < goobers.length; i++)
+        {
+          if(goobers[i] == o)
+          {
+            clicker.unregister(goobers[i]);
+            goobers.splice(i,1);
+          }
+        }
+        return;
+      }
     }
 
-    if(o.carbon < 5) //seek out food
+    if(o.carbon < goober_ideal_carbon) //seek out food
     {
       var closest_pi = -1;
       var closest_d = 99999;
@@ -399,23 +418,6 @@ var GamePlayScene = function(game, stage)
         }
       }
     }
-    if(o.carbon == 0) //starving
-    {
-      o.starving++;
-      if(o.starving > 100) //dead
-      {
-        earth.carbon += o.carbon;
-        earth.oxygen += o.oxygen;
-        for(var i = 0; i < goobers.length; i++)
-        {
-          if(goobers[i] == o)
-          {
-            clicker.unregister(goobers[i]);
-            goobers.splice(i,1);
-          }
-        }
-      }
-    }
   }
   var tickPlant = function(o)
   {
@@ -438,12 +440,10 @@ var GamePlayScene = function(game, stage)
         ct = 0;
         transfer(earth,o,ot,ct);
       }
-    }
 
-    if(o.carbon == 0) //starving
-    {
-      o.starving++;
-      if(o.starving > 100) //dead
+      if(o.carbon < plant_ideal_carbon) o.starving++;
+      if(o.oxygen < plant_ideal_oxygen) o.suffocating++;
+      if(o.starving > 100 || o.suffocating > 100) //dead
       {
         earth.carbon += o.carbon;
         earth.oxygen += o.oxygen;
@@ -455,6 +455,7 @@ var GamePlayScene = function(game, stage)
             plants.splice(i,1);
           }
         }
+        return;
       }
     }
   }
