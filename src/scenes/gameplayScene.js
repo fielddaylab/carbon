@@ -82,8 +82,17 @@ var GamePlayScene = function(game, stage)
     earth.ww = cam.ww;
     earth.wh = cam.wh;
 
+/*
     earth.oxygen = 100;
     earth.carbon = 25;
+    earth.o2 = 25;
+    earth.co2 = 25;
+*/
+    earth.oxygen = 100;
+    earth.carbon = 100;
+    earth.o2 = 25;
+    earth.co2 = 25;
+
     oxygens = [];
     for(var i = 0; i < earth.oxygen; i++)
     {
@@ -111,7 +120,7 @@ var GamePlayScene = function(game, stage)
     {
       var g = new Goober();
       g.wx = 0;
-      transfer(earth,g,goober_start_oxygen,goober_start_carbon);
+      transfer(earth,g,0,0,goober_start_oxygen,goober_start_carbon);
       clicker.register(g);
       goobers.push(g);
     }
@@ -121,7 +130,7 @@ var GamePlayScene = function(game, stage)
     {
       var p = new Plant();
       p.wx = Math.random()*cam.ww-cam.ww/2;
-      transfer(earth,p,plant_start_oxygen,plant_start_carbon);
+      transfer(earth,p,0,0,plant_start_oxygen,plant_start_carbon);
       clicker.register(p);
       plants.push(p);
     }
@@ -209,8 +218,8 @@ var GamePlayScene = function(game, stage)
     self.carbon = 0;
     self.oxygen_rep = 0;
     self.carbon_rep = 0;
-    self.o2 = 25;
-    self.co2 = 25;
+    self.o2 = 0;
+    self.co2 = 0;
 
     self.x;
     self.y;
@@ -393,10 +402,20 @@ var GamePlayScene = function(game, stage)
 
   }
 
-  var transfer = function(from,to,oxygen,carbon)
+  var transfer = function(from,to,o2,co2,oxygen,carbon)
   {
+    to.o2 += o2; from.o2 -= o2;
+    if(from.o2 < 0) { o2 += from.o2; to.o2 += from.o2; from.o2 = 0; }
+    from.oxygen -= 2*o2;
+
+    to.co2 += co2; from.co2 -= co2;
+    if(from.co2 < 0) { co2 += from.co2; to.co2 += from.co2; from.co2 = 0; }
+    from.oxygen -= 2*co2;
+    from.carbon -= co2;
+
     to.oxygen += oxygen; from.oxygen -= oxygen;
     if(from.oxygen < 0) { to.oxygen += from.oxygen; from.oxygen = 0; }
+
     to.carbon += carbon; from.carbon -= carbon;
     if(from.carbon < 0) { to.carbon += from.carbon; from.carbon = 0; }
   }
@@ -411,18 +430,18 @@ var GamePlayScene = function(game, stage)
       //1x o2
       ot = 2;
       ct = 0;
-      transfer(earth,o,ot,ct);
+      transfer(earth,o,0,0,ot,ct);
       //1x co2
       ot = 2;
       ct = 1;
-      transfer(o,earth,ot,ct);
+      transfer(o,earth,0,0,ot,ct);
 
       //breathe heavy
       if(o.oxygen < goober_ideal_oxygen)
       {
         ot = 2;
         ct = 0;
-        transfer(earth,o,ot,ct);
+        transfer(earth,o,0,0,ot,ct);
       }
 
       if(o.oxygen < goober_ideal_oxygen) o.suffocating++;
@@ -456,7 +475,7 @@ var GamePlayScene = function(game, stage)
           var p_carbon = plants[closest_pi].carbon;
           killPlant(plants[closest_pi]); //give to earth
           //take carbon back from earth
-          transfer(earth,o,0,p_carbon);
+          transfer(earth,o,0,0,0,p_carbon);
           o.starving -= Math.floor((o.carbon/goober_ideal_carbon)*o.starving);
         }
         else //move toward it
@@ -474,18 +493,18 @@ var GamePlayScene = function(game, stage)
       //1x co2
       ot = 2;
       ct = 1;
-      transfer(earth,o,ot,ct);
+      transfer(earth,o,0,0,ot,ct);
       //1x o2
       ot = 2;
       ct = 0;
-      transfer(o,earth,ot,ct);
+      transfer(o,earth,0,0,ot,ct);
 
       //breathe heavy
       if(o.oxygen < plant_ideal_oxygen)
       {
         ot = 2;
         ct = 0;
-        transfer(earth,o,ot,ct);
+        transfer(earth,o,0,0,ot,ct);
       }
 
       if(o.oxygen < plant_ideal_oxygen) o.suffocating++;
@@ -665,7 +684,7 @@ var GamePlayScene = function(game, stage)
 
   var killGoober = function(o)
   {
-    transfer(o,earth,o.oxygen,o.carbon);
+    transfer(o,earth,0,0,o.oxygen,o.carbon);
 
     for(var i = 0; i < oxygens.length; i++)
     {
@@ -696,7 +715,7 @@ var GamePlayScene = function(game, stage)
 
   var killPlant = function(o)
   {
-    transfer(o,earth,o.oxygen,o.carbon);
+    transfer(o,earth,0,0,o.oxygen,o.carbon);
 
     for(var i = 0; i < oxygens.length; i++)
     {
