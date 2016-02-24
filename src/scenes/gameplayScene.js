@@ -82,6 +82,8 @@ var GamePlayScene = function(game, stage)
     earth.ww = cam.ww;
     earth.wh = cam.wh;
 
+    earth.oxygen = 100;
+    earth.carbon = 25;
     oxygens = [];
     for(var i = 0; i < earth.oxygen; i++)
     {
@@ -203,10 +205,12 @@ var GamePlayScene = function(game, stage)
   {
     var self = this;
 
-    self.oxygen = 100;
-    self.carbon = 100;
+    self.oxygen = 0;
+    self.carbon = 0;
     self.oxygen_rep = 0;
     self.carbon_rep = 0;
+    self.o2 = 25;
+    self.co2 = 25;
 
     self.x;
     self.y;
@@ -260,6 +264,9 @@ var GamePlayScene = function(game, stage)
     self.carbon = 0;
     self.oxygen_rep = 0;
     self.carbon_rep = 0;
+    self.o2 = 0;
+    self.co2 = 0;
+
     self.starving = 0;
     self.suffocating = 0;
     self.t = 0;
@@ -297,6 +304,9 @@ var GamePlayScene = function(game, stage)
     self.carbon = 0;
     self.oxygen_rep = 0;
     self.carbon_rep = 0;
+    self.o2 = 0;
+    self.co2 = 0;
+
     self.starving = 0;
     self.suffocating = 0;
     self.t = 0;
@@ -655,8 +665,7 @@ var GamePlayScene = function(game, stage)
 
   var killGoober = function(o)
   {
-    earth.oxygen += o.oxygen;
-    earth.carbon += o.carbon;
+    transfer(o,earth,o.oxygen,o.carbon);
 
     for(var i = 0; i < oxygens.length; i++)
     {
@@ -687,8 +696,7 @@ var GamePlayScene = function(game, stage)
 
   var killPlant = function(o)
   {
-    earth.oxygen += o.oxygen;
-    earth.carbon += o.carbon;
+    transfer(o,earth,o.oxygen,o.carbon);
 
     for(var i = 0; i < oxygens.length; i++)
     {
