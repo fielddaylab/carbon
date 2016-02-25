@@ -88,8 +88,8 @@ var GamePlayScene = function(game, stage)
     earth.o2 = 25;
     earth.co2 = 25;
 */
-    earth.oxygen = 100;
-    earth.carbon = 100;
+    earth.oxygen = 1000;
+    earth.carbon = 1000;
     earth.o2 = 25;
     earth.co2 = 25;
 
@@ -151,7 +151,6 @@ var GamePlayScene = function(game, stage)
 
     resolveReps();
 
-    dc.context.globalAlpha=0.1;
     for(var i = 0; i < oxygens.length; i++)
       tickOxygen(oxygens[i]);
     for(var i = 0; i < carbons.length; i++)
